@@ -1,3 +1,3 @@
-Create a PDF in a go compiled to wasm.
-The wasm module is embed in a webpage that trigger the PDF creation and then create a temporary link to download the new PDF.
+Creates a PDF in go. The module is compiled to wasm.
+The wasm module is embeded in a webpage that triggers the PDF creation and then creates a temporary link to download the new PDF.
 
