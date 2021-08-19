@@ -1,0 +1,64 @@
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <script src="wasm_exec.js" ></script>
+
+    </head>
+    <body>
+        <h1> PDF creation in a wasm binary </h1>
+
+        <script>
+            if (!WebAssembly.instantiateStreaming) {
+                WebAssembly.instantiateStreaming = async (resp, importObject) => {
+                    const source = await (await resp).arrayBuffer();
+                    return await WebAssembly.instantiate(source, importObject);
+                }
+            }
+
+            function loadWasm(path) {
+                const go = new Go();
+                return new Promise((resolve, reject) => {
+                    WebAssembly.instantiateStreaming(fetch(path), go.importObject)
+                    .then(result => {
+                        go.run(result.instance);
+                        resolve(result);
+                    })
+                    .catch(error => {
+                        reject(error);
+                    });
+                });
+            }
+
+            function downloadPdf(buffer) {
+			    let blob = new Blob([buffer], {'type': 'application/pdf'});
+                // create a link to this blob URL (code from: https://gist.github.com/davalapar/d0a5ba7cce4bc599f54800da22926da2)
+                const blobURL = window.URL.createObjectURL(blob);
+                const tempLink = document.createElement('a');
+                tempLink.style.display = 'none';
+                tempLink.href = blobURL;
+                tempLink.setAttribute('download', "wasm-go/pdf");
+                // Safari thinks _blank anchor are pop ups. We only want to set _blank
+                // target if the browser does not support the HTML5 download attribute.
+                // This allows you to download files in desktop safari if pop up blocking
+                // is enabled.
+                if (typeof tempLink.download === 'undefined') {
+                    tempLink.setAttribute('target', '_blank');
+                }
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                document.body.removeChild(tempLink);
+                setTimeout(() => {
+                    // For Firefox it is necessary to delay revoking the ObjectURL
+                    window.URL.revokeObjectURL(blobURL);
+                }, 100);
+            }
+
+            loadWasm("main.wasm").then(result => {
+                console.log("try to create PDF");
+                CreateBasicPdf();
+            }).catch(error => {
+                console.log("issues when loading wasm", error);
+            });
+        </script>
+    </body>
+</html>
